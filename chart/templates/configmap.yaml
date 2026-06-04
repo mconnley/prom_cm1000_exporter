@@ -1,0 +1,11 @@
+{{- if .Values.configFile.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "prom-cm1000-exporter.fullname" . }}
+  labels:
+    {{- include "prom-cm1000-exporter.labels" . | nindent 4 }}
+data:
+  prom_cm1000.yaml: |
+    {{- .Values.configFile.content | nindent 4 }}
+{{- end }}
