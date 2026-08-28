@@ -72,8 +72,18 @@ modem:
   ip: "192.168.100.1"
   # Username for modem login
   username: "admin"
-  # Password for modem login (REQUIRED)
-  password: "hunter2"
+  # Password for modem login. REQUIRED unless existingSecret is set.
+  #
+  # Setting this puts the modem password in your values file, and therefore in
+  # git. Prefer existingSecret below and leave this empty.
+  password: ""
+  # Name of a pre-existing Secret holding the modem password -- created by
+  # External Secrets, sealed-secrets, or by hand. When set, the chart does NOT
+  # render its own Secret and `password` above is ignored.
+  existingSecret: ""
+  # Key within existingSecret. Defaults to the same key the chart uses for its
+  # own Secret, so an ESO ExternalSecret can simply target `modem-password`.
+  existingSecretKey: "modem-password"
 
 exporter:
   # Port the exporter listens on

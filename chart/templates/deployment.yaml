@@ -77,8 +77,8 @@ spec:
         - name: PCM_password
           valueFrom:
             secretKeyRef:
-              name: {{ include "prom-cm1000-exporter.fullname" . }}
-              key: modem-password
+              name: {{ .Values.modem.existingSecret | default (include "prom-cm1000-exporter.fullname" .) }}
+              key: {{ .Values.modem.existingSecretKey | default "modem-password" }}
         - name: PPE_export_port
           value: {{ .Values.exporter.port | quote }}
         - name: PPE_interval
