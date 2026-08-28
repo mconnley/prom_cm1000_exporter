@@ -1,0 +1,44 @@
+1. Get the application status by running these commands:
+{{- if contains "NodePort" .Values.service.type }}
+  export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "prom-cm1000-exporter.fullname" . }})
+  export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+{{- else if contains "LoadBalancer" .Values.service.type }}
+  NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+  You can watch the status by running:
+  kubectl get --namespace {{ .Release.Namespace }} svc -w {{ include "prom-cm1000-exporter.fullname" . }}
+{{- else if contains "ClusterIP" .Values.service.type }}
+  kubectl port-forward --namespace {{ .Release.Namespace }} svc/{{ include "prom-cm1000-exporter.fullname" . }} 9527:{{ .Values.service.port }} &
+  echo "Access the exporter at http://localhost:9527/metrics"
+{{- end }}
+
+2. Verify the deployment status:
+  kubectl get deployment -n {{ .Release.Namespace }} {{ include "prom-cm1000-exporter.fullname" . }}
+
+3. Check the pod logs:
+  kubectl logs -n {{ .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }}
+
+4. Configuration details:
+{{- if .Values.useConfigFile }}
+  Using ConfigMap-based configuration (prom_cm1000.yaml)
+{{- else }}
+  Using environment variables:
+  - Modem IP: {{ .Values.modem.ip }}
+  - Username: {{ .Values.modem.username }}
+  - Export Port: {{ .Values.exporter.port }}
+  - Scrape Interval: {{ .Values.exporter.interval }}s
+{{- end }}
+
+5. The metrics endpoint is available at: http://<pod-ip>:{{ .Values.exporter.port }}/metrics
+
+For Prometheus integration, update your prometheus.yml to add this scrape config:
+  - job_name: 'cm1000-modem'
+    kubernetes_sd_configs:
+      - role: pod
+        namespaces:
+          names:
+            - {{ .Release.Namespace }}
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+        action: keep
+        regex: true

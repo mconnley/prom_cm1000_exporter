@@ -1,0 +1,118 @@
+replicaCount: 1
+
+image:
+  repository: hsnodgrass3/prom_cm1000_exporter
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "9527"
+  prometheus.io/path: "/metrics"
+
+podSecurityContext:
+  runAsNonRoot: false
+
+securityContext: {}
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 9527
+  annotations: {}
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+resources:
+  limits:
+    cpu: 200m
+    memory: 128Mi
+  requests:
+    cpu: 100m
+    memory: 64Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# Configuration for the exporter
+# Choose ONE method: either use environment variables OR a config file, not both
+
+# Method 1: Use environment variables (set useConfigFile: false)
+useConfigFile: false
+
+modem:
+  # IP address of the CM1000 modem
+  ip: "192.168.100.1"
+  # Username for modem login
+  username: "admin"
+  # Password for modem login. REQUIRED unless existingSecret is set.
+  #
+  # Setting this puts the modem password in your values file, and therefore in
+  # git. Prefer existingSecret below and leave this empty.
+  password: ""
+  # Name of a pre-existing Secret holding the modem password -- created by
+  # External Secrets, sealed-secrets, or by hand. When set, the chart does NOT
+  # render its own Secret and `password` above is ignored.
+  existingSecret: ""
+  # Key within existingSecret. Defaults to the same key the chart uses for its
+  # own Secret, so an ESO ExternalSecret can simply target `modem-password`.
+  existingSecretKey: "modem-password"
+
+exporter:
+  # Port the exporter listens on
+  port: 9527
+  # Interval in seconds between scrapes
+  interval: 10
+
+# Method 2: Alternative - Use a config file (set useConfigFile: true)
+# When enabled, the YAML config below will be mounted at /usr/local/prom_cm1000.yaml
+configFile:
+  enabled: false
+  content: |
+    modem_ip: 192.168.100.1
+    username: admin
+    password: hunter2
+    export_port: 9527
+    interval: 10
+
+# Health check configuration
+livenessProbe:
+  enabled: true
+  initialDelaySeconds: 10
+  periodSeconds: 30
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  enabled: true
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 2
